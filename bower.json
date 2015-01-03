@@ -1,0 +1,23 @@
+{
+  "name": "testmator",
+  "version": "0.1.0",
+  "homepage": "https://github.com/GrayBullet/testmator",
+  "authors": [
+    "Tomo Masakura <tomo.masakura@gmail.com>"
+  ],
+  "description": "PageObject and UI testing framework.",
+  "main": "testmator.js",
+  "keywords": [
+    "PageObject",
+    "test",
+    "javascript"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}
