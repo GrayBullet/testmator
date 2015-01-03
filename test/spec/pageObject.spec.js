@@ -10,22 +10,6 @@
 
         expect(page instanceof PageObject).toBeTruthy();
       });
-    });
-
-    describe('extend', function () {
-      it('extend page object is instance of PageObject', function () {
-        var FooPage = PageObject.extend();
-        var page = new FooPage();
-
-        expect(page instanceof PageObject).toBeTruthy();
-      });
-
-      it('extend page object is instance of extend PageObject', function () {
-        var FooPage = PageObject.extend();
-        var page = new FooPage();
-
-        expect(page instanceof FooPage).toBeTruthy();
-      });
 
       it('el is string', function () {
         var page = new PageObject({el: 'body'});
@@ -61,6 +45,22 @@
 
         expect(page.el).toEqual($('body')[0]);
         expect(page.$el[0]).toEqual($('body')[0]);
+      });
+    });
+
+    describe('extend', function () {
+      it('extend page object is instance of PageObject', function () {
+        var FooPage = PageObject.extend();
+        var page = new FooPage();
+
+        expect(page instanceof PageObject).toBeTruthy();
+      });
+
+      it('extend page object is instance of extend PageObject', function () {
+        var FooPage = PageObject.extend();
+        var page = new FooPage();
+
+        expect(page instanceof FooPage).toBeTruthy();
       });
     });
   });
