@@ -84,6 +84,9 @@ window.testmator = (function () {
       getPromise: function () {
         return promise;
       },
+      getPage: function () {
+        return page;
+      },
       action: function (filter) {
         return toAutomator(filter);
       },
@@ -149,6 +152,35 @@ window.testmator = (function () {
     };
 
     return wrapper;
+  };
+
+  // Use direct method.
+  // ex: .clickAt(0)
+  var functionAutomator = makeAutomator.functionAutomator = function (automator) {
+    var wrapper = wrapAutomator(automator, functionAutomator);
+
+    var page = wrapper.getPage();
+    var proxy = function (name) {
+      return function () {
+        var args = _.toArray(arguments);
+        return wrapper.action(function () {
+          return page[name].apply(page, args);
+        });
+      };
+    };
+
+    var proxies = _.chain(page)
+          .functions()
+          .map(function (name) {
+            return [
+              name,
+              proxy(name)
+            ];
+          })
+          .object()
+          .value();
+
+    return _.extend(proxies, wrapper);
   };
 
   return _.extend(makeAutomator, {
