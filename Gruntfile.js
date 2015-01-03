@@ -29,7 +29,10 @@ module.exports = function (grunt) {
 
     jasmine: {
       all: {
-        src: 'testmator.js',
+        src: [
+          'testmator.js',
+          'test/helpers/**/*.js'
+        ],
         options: {
           specs: 'test/spec/{,*/}*.js',
           vendor: [
