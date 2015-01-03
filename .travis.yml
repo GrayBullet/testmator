@@ -6,6 +6,6 @@ before_install:
   - npm install -g grunt-cli bower
   - npm install
   - bower install
-  - bower install jquery@$JQUERY_VERSION
+  - bower install jquery#$JQUERY_VERSION
 script:
   - npm test
