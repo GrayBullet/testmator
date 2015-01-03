@@ -344,7 +344,11 @@ window.testmator = (function () {
     return wrapper;
   };
 
-  return _.extend(makeAutomator, {
+  var testmator = function (page) {
+    return functionAutomator(namedAutomator(waitAutomator(makeAutomator(page))));
+  };
+
+  return _.extend(testmator, {
     PageObject: PageObject,
     automator: makeAutomator,
     getRoot: getRoot,
