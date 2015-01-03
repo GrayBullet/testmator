@@ -22,8 +22,10 @@
     "_": false,
     "Backbone": false,
     "describe": false,
+    "beforeEach": false,
     "it": false,
     "expect": false,
+    "jasmine": false,
     "testmator": false
   }
 }

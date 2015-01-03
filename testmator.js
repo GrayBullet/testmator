@@ -19,7 +19,7 @@ window.testmator = (function () {
 
     // Inherit prototype properties.
     if (protoProps) {
-      _.extend(child, protoProps);
+      _.extend(child.prototype, protoProps);
     }
 
     return child;
@@ -42,10 +42,24 @@ window.testmator = (function () {
 
     this.$el = (el instanceof $) ? el : $(el);
     this.el = this.$el[0];
+
+    this.parent = options && options.parent;
   };
 
   _.extend(PageObject, {
     extend: extend
+  });
+
+  _.extend(PageObject.prototype, {
+    $: function () {
+      return this.$el.find.apply(this.$el, arguments);
+    },
+    click: function () {
+      this.$.apply(this, arguments).trigger('click');
+    },
+    switchParent: function () {
+      return this.parent;
+    }
   });
 
   return _.extend({}, {

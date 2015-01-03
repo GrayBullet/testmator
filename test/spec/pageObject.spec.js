@@ -63,5 +63,71 @@
         expect(page instanceof FooPage).toBeTruthy();
       });
     });
+
+    describe('functions', function () {
+      var fooPage;
+      var rootPage;
+      var clicked;
+
+      beforeEach(function () {
+        var fooEl = $('<ul>')
+              .append($('<li id="li1">').text('a'))
+              .append($('<li id="li2">').text('b'));
+        var FooPage = PageObject.extend();
+        fooPage = new FooPage({el: fooEl});
+
+        var rootEl = $('<div>')
+              .append($('<button id="button1">'));
+        var RootPage = PageObject.extend({
+          clickButton1: function () {
+            this.click('#button1');
+
+            return new FooPage({
+              el: fooEl,
+              parent: this
+            });
+          }
+        });
+        rootPage = new RootPage({el: rootEl});
+
+        clicked = jasmine.createSpy('clicked');
+      });
+
+      describe('$', function () {
+        it('Find element', function () {
+          var result = fooPage.$(':first-child').text();
+
+          expect(result).toEqual('a');
+        });
+      });
+
+      describe('click', function () {
+        it('Raise click event.', function () {
+          fooPage.$('#li2').on('click', clicked);
+
+          fooPage.click('#li2');
+
+          expect(clicked).toHaveBeenCalled();
+        });
+
+        it('Custom click method.', function () {
+          rootPage.$('#button1').on('click', clicked);
+
+          rootPage.clickButton1();
+
+          expect(clicked).toHaveBeenCalled();
+        });
+      });
+
+      describe('switchParent', function () {
+        it('return parent PageObject', function () {
+          var childPage = rootPage.clickButton1();
+
+          var result = childPage.switchParent();
+
+          expect(result).toEqual(rootPage);
+        });
+      });
+    });
   });
 })();
