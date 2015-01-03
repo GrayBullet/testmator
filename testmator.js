@@ -104,34 +104,51 @@ window.testmator = (function () {
     return convertToAutomator(promise, page);
   };
 
+  var wrapAutomator = function (automator, builder) {
+    var bind = function (name) {
+      return function () {
+        var result = automator[name].apply(automator, arguments);
+
+        return (result && result.getPromise) ? builder(result) : result;
+      };
+    };
+
+    return _.chain(automator)
+      .functions()
+      .map(function (name) {
+        return [
+          name,
+          bind(name)
+        ];
+      })
+      .object()
+      .value();
+  };
+
   // Use named action.
   // ex: .action('clickAt', 0)
   var namedAutomator = makeAutomator.namedAutomator = function (automator) {
-    return {
-      getPromise: function () {
-        return automator.getPromise();
-      },
-      action: function () {
-        var args = _.toArray(arguments);
+    var wrapper = wrapAutomator(automator, namedAutomator);
 
-        // Throw if .action(function () { /* ... */ }).
-        if (_.isFunction(_.first(args))) {
-          return namedAutomator(automator.action.apply(automator, args));
-        }
+    var originalAction = wrapper.action;
+    wrapper.action = function () {
+      var args = _.toArray(arguments);
 
-        var name = args.shift();
-        return namedAutomator(automator.action(function (page) {
-          return page[name].apply(page, args);
-        }));
-      },
-      scope: function () {
-        return namedAutomator(automator.scope.apply(automator, arguments));
-      },
-      test: function () {
-        return namedAutomator(automator.test.apply(automator, arguments));
-      },
-      done: _.bind(automator.done, automator)
+      // Replace method name to function.
+      if (_.isString(_.first(args))) {
+        var copyArgs = _.clone(args);
+        var name = copyArgs.shift();
+        args = [
+          function (page) {
+            return page[name].apply(page, copyArgs);
+          }
+        ];
+      }
+
+      return originalAction.apply(this, args);
     };
+
+    return wrapper;
   };
 
   return _.extend(makeAutomator, {
