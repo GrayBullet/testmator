@@ -72,7 +72,7 @@ window.testmator = (function () {
       return function (target) {
         var result = filter(target);
 
-        return (result && result.action && promise) || result || page;
+        return (result && result.getPromise && result.getPromise()) || result || target || page;
       };
     };
 
@@ -81,6 +81,9 @@ window.testmator = (function () {
     };
 
     return {
+      getPromise: function () {
+        return promise;
+      },
       action: function (filter) {
         return toAutomator(filter);
       },
@@ -95,16 +98,44 @@ window.testmator = (function () {
   };
 
   // Convert Automator object.
-  var automator = function (page) {
+  var makeAutomator = function (page) {
     var promise = $.Deferred().resolve(page).promise();
 
     return convertToAutomator(promise, page);
   };
 
-  var testmator = automator;
+  // Use named action.
+  // ex: .action('clickAt', 0)
+  var namedAutomator = makeAutomator.namedAutomator = function (automator) {
+    return {
+      getPromise: function () {
+        return automator.getPromise();
+      },
+      action: function () {
+        var args = _.toArray(arguments);
 
-  return _.extend(testmator, {
+        // Throw if .action(function () { /* ... */ }).
+        if (_.isFunction(_.first(args))) {
+          return namedAutomator(automator.action.apply(automator, args));
+        }
+
+        var name = args.shift();
+        return namedAutomator(automator.action(function (page) {
+          return page[name].apply(page, args);
+        }));
+      },
+      scope: function () {
+        return namedAutomator(automator.scope.apply(automator, arguments));
+      },
+      test: function () {
+        return namedAutomator(automator.test.apply(automator, arguments));
+      },
+      done: _.bind(automator.done, automator)
+    };
+  };
+
+  return _.extend(makeAutomator, {
     PageObject: PageObject,
-    automator: automator
+    automator: makeAutomator
   });
 })();
