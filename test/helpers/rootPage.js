@@ -14,7 +14,6 @@ window.createRootPage = function () {
   var $child = $('<div>')
         .append($('<button id="toParent">'));
 
-
   var ChildPage = PageObject.extend({
     name: 'child',
     clickToParent: function () {
