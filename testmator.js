@@ -62,7 +62,49 @@ window.testmator = (function () {
     }
   });
 
-  return _.extend({}, {
-    PageObject: PageObject
+  // Convert from Promise to Automator object.
+  var convertToAutomator = function (promise, page) {
+    var then = function (filter) {
+      return promise.then(filter);
+    };
+
+    var wrapFilter = function (filter) {
+      return function (target) {
+        var result = filter(target);
+
+        return (result && result.action && promise) || result || page;
+      };
+    };
+
+    var toAutomator = function (filter) {
+      return convertToAutomator(then(wrapFilter(filter)), page);
+    };
+
+    return {
+      action: function (filter) {
+        return toAutomator(filter);
+      },
+      scope: function (filter) {
+        return toAutomator(filter);
+      },
+      test: function (filter) {
+        return toAutomator(filter);
+      },
+      done: _.bind(promise.done, promise)
+    };
+  };
+
+  // Convert Automator object.
+  var automator = function (page) {
+    var promise = $.Deferred().resolve(page).promise();
+
+    return convertToAutomator(promise, page);
+  };
+
+  var testmator = automator;
+
+  return _.extend(testmator, {
+    PageObject: PageObject,
+    automator: automator
   });
 })();
