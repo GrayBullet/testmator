@@ -43,6 +43,8 @@
       });
 
       it('open and close with $.Deferred()', function (done) {
+        var status;
+
         automator(rootPage)
           .action(function (root) {
             return $.Deferred().resolve(root.clickOpenChild()).promise();
@@ -51,9 +53,15 @@
             expect(child.name).toEqual('child');
           })
           .action(function (child) {
-            return $.Deferred().resolve(child.clickToParent()).promise();
+            var deferred = $.Deferred();
+            setTimeout(function () {
+              status = 'OK';
+              deferred.resolve(child.clickToParent());
+            }, 50);
+            return deferred.promise();
           })
           .test(function (root) {
+            expect(status).toEqual('OK');
             expect(root.name).toEqual('root');
           })
           .done(done);

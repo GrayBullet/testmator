@@ -38,7 +38,8 @@ module.exports = function (grunt) {
           vendor: [
             'bower_components/jquery/dist/jquery.js',
             'bower_components/underscore/underscore.js',
-            'bower_components/backbone/backbone.js'
+            'bower_components/backbone/backbone.js',
+            'bower_components/bootstrap/dist/js/bootstrap.js'
           ]
         }
       }

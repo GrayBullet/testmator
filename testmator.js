@@ -1,6 +1,130 @@
 window.testmator = (function () {
   'use strict';
 
+  var createQueue = function () {
+    var actions = [];
+
+    return {
+      push: function (action) {
+        actions.push(action);
+      },
+      fire: function () {
+        var deferred = $.Deferred();
+        var fireActions = _.clone(actions);
+        actions = [];
+
+        setTimeout(function () {
+          fireActions.forEach(function (action) {
+            action();
+          });
+          deferred.resolve();
+        }, 11);
+
+        return deferred.promise();
+      }
+    };
+  };
+
+  var getRoot = function ($element) {
+    while (true) {
+      var $parent = $element.parent();
+      if ($parent.length <= 0) {
+        return $element;
+      }
+      $element = $parent;
+    }
+  };
+
+  var createTransitionObjectEventOnly = function ($element, start, end) {
+    var events = [
+      {start: 'show.bs.modal', end: 'shown.bs.modal'},
+      {start: 'hide.bs.modal', end: 'hidden.bs.modal'},
+      {start: 'show.bs.collapse', end: 'shown.bs.collapse'},
+      {start: 'hide.bs.collapse', end: 'hidden.bs.collapse'},
+      {start: 'show.bs.dropdown', end: 'shown.bs.dropdown'},
+      {start: 'hide.bs.dropdown', end: 'hidden.bs.dropdown'},
+      {start: 'hide.bs.alert', end: 'hidden.bs.alert'}
+    ];
+
+    events.forEach(function (eventInfo) {
+      $element.on(eventInfo.start, function (e) {
+        if (start) {
+          start.apply(this, arguments);
+        }
+
+        $(e.target).one(eventInfo.end, function () {
+          if (end) {
+            end.apply(this, arguments);
+          }
+        });
+      });
+    });
+
+    return {};
+  };
+
+  var createTransitionObject = function ($element, start, end) {
+    var transitioning = 0;
+    var actions = [];
+
+    var s = function () {
+      transitioning++;
+      if (start) {
+        start.apply(this, arguments);
+      }
+    };
+    var e = function () {
+      if (transitioning > 0) {
+        transitioning--;
+
+        if (transitioning === 0) {
+          actions.forEach(function (action) {
+            action();
+          });
+        }
+      }
+
+      if (end) {
+        end.apply(this, arguments);
+      }
+    };
+
+    return _.extend(createTransitionObjectEventOnly($element, s, e), {
+      transitioning: function () {
+        return transitioning > 0;
+      },
+      onTransitionEnd: function (action) {
+        actions.push(action);
+      }
+    });
+  };
+
+  $.fn.transitionPromise = function () {
+    var args = _.toArray(arguments);
+    var deferred = $.Deferred();
+
+    var $root = getRoot($(this));
+    var queue = $root.data('transition.queue');
+    if (!queue) {
+      queue = createQueue();
+      $root.data('transition.queue', queue);
+
+      var transition = createTransitionObject($(this));
+      transition.onTransitionEnd(_.bind(queue.fire, queue));
+      $root.data('transition.object', transition);
+    }
+
+    queue.push(function () {
+      deferred.resolve.apply(deferred, args);
+    });
+
+    if (!$root.data('transition.object').transitioning()) {
+      queue.fire();
+    }
+
+    return deferred.promise();
+  };
+
   // Backbone like extend function.
   var extend = function (protoProps, staticProps) {
     var parent = this;
@@ -183,8 +307,48 @@ window.testmator = (function () {
     return _.extend(proxies, wrapper);
   };
 
+  // Wait Bootstrap animation.
+  var waitAutomator = makeAutomator.waitAutomator = function (automator) {
+    // initialize wait transition object.
+    automator.getPage().$el.transitionPromise();
+
+    var wrapper = wrapAutomator(automator, waitAutomator);
+
+    var proxy = function (name) {
+      var original = wrapper[name];
+
+      return function (filter) {
+        return original.call(this, function (target) {
+          var result = filter.call(target, target);
+
+          // Return transition promise if result is PageObject.
+          if (result.$el) {
+            return result.$el.transitionPromise(result);
+          }
+
+          if (result.getPromise) {
+            return result.getPromise()
+              .then(function (target) {
+                return target.$el.transitionPromise(target);
+              });
+          }
+
+          return result;
+        });
+      };
+    };
+
+    wrapper.action = proxy('action');
+    wrapper.scope = proxy('scope');
+
+    return wrapper;
+  };
+
   return _.extend(makeAutomator, {
     PageObject: PageObject,
-    automator: makeAutomator
+    automator: makeAutomator,
+    getRoot: getRoot,
+    createQueue: createQueue,
+    createTransitionObject: createTransitionObject
   });
 })();
