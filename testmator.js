@@ -1,6 +1,31 @@
 window.testmator = (function () {
   'use strict';
 
+  var setTransitionType = (function () {
+    var transitionType = 'normal';
+
+    var originalEmulateTransitionEnd = $.fn.emulateTransitionEnd;
+    $.fn.emulateTransitionEnd = function () {
+      var args = _.toArray(arguments);
+
+      if (transitionType === 'immediately') {
+        // Fire immediately.
+        $(this).trigger($.support.transition.end);
+        return this;
+
+      } else if (transitionType === 'fast' && args.length > 0) {
+        // Fire fast.
+        args[0] = 1;
+      }
+
+      return originalEmulateTransitionEnd.apply(this, args);
+    };
+
+    return function (type) {
+      transitionType = type;
+    };
+  })();
+
   var createQueue = function () {
     var actions = [];
 
@@ -353,6 +378,7 @@ window.testmator = (function () {
     automator: makeAutomator,
     getRoot: getRoot,
     createQueue: createQueue,
-    createTransitionObject: createTransitionObject
+    createTransitionObject: createTransitionObject,
+    setTransitionType: setTransitionType
   });
 })();
