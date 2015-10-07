@@ -1,3 +1,4 @@
+// hogehoge
 window.testmator = (function () {
   'use strict';
 
